@@ -1,4 +1,7 @@
 # 约束理论 (Theory of Constraints, TOC)
+
+> **证据层级：B（实践框架）。** TOC 与五聚焦步骤可追溯到 Goldratt 原作和专业机构资料，主要由管理实践与案例支持；应用时不得把单一约束或固定步骤写成对所有复杂系统都成立的普遍因果规律。
+
 ## 概述
 
 约束理论把组织或流程视为一个为目标服务的整体系统：在某一时期，系统产出受到少数约束限制；改善应围绕当前约束展开，而不是让每个局部都各自追求最高效率。
@@ -112,6 +115,6 @@
 
 ## 依据与参考
 
-- Eliyahu M. Goldratt & Jeff Cox, *The Goal: A Process of Ongoing Improvement*, 3rd Revised Edition, North River Press, 2004：通过生产系统案例阐释约束、流动与持续改善。
-- Eliyahu M. Goldratt, *What Is This Thing Called Theory of Constraints and How Should It Be Implemented?*, North River Press, 1990。
-- TOCICO, [The Five Focusing Steps](https://www.tocico.org/resource/collection/B7228A41-D58A-4BAB-9E56-EE9D6F7AA21F/Schragenheim%2C_Eli_Development_of_TOC_v7_TOCICO-FINAL.pdf)：五聚焦步骤及“约束打破后重新开始、警惕惯性”的表述。
+- Eliyahu M. Goldratt & Jeff Cox, *The Goal: A Process of Ongoing Improvement*, 3rd Revised Edition, North River Press, 2004：通过生产系统案例阐释约束、流动与持续改善。ISBN 978-0-88427-178-9。
+- Eliyahu M. Goldratt, *What Is This Thing Called Theory of Constraints and How Should It Be Implemented?*, North River Press, 1990。ISBN 978-0-88427-085-0。
+- Eliyahu M. Goldratt, [“The Five Steps of Focusing”](https://northriverpress.com/wp-content/uploads/2018/01/Free-download-5FS.pdf), North River Press：原作者资料给出定义目标与衡量、识别、充分利用、服从、提升及避免惯性的步骤。

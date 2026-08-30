@@ -1,4 +1,7 @@
 # 非暴力沟通 (Nonviolent Communication, NVC)
+
+> **证据层级：B（实践框架）。** NVC 的四要素、表达与倾听流程可追溯到 Rosenberg 原作和 CNVC 官方材料，主要作为沟通实践框架使用；它不能保证化解冲突，也不能替代安全、问责、法律或专业处置。
+
 ## 概述
 
 非暴力沟通由 Marshall B. Rosenberg 系统化，用观察、感受、需要和请求来表达自己，也用同样的线索倾听他人，目标是在尊重自主性的前提下提高理解、连接与合作质量。
@@ -92,6 +95,5 @@ NVC 表达：
 
 ## 依据与参考
 
-- Marshall B. Rosenberg, *Nonviolent Communication: A Language of Life*, 3rd Edition, PuddleDancer Press, 2015：NVC 的四要素、诚实表达与共情倾听。
+- Marshall B. Rosenberg, *Nonviolent Communication: A Language of Life*, 3rd Edition, PuddleDancer Press, 2015：NVC 的四要素、诚实表达与共情倾听。ISBN 978-1-892005-28-1。
 - Center for Nonviolent Communication, [Certification Preparation Packet, Version 3.0](https://www.cnvc.org/images/pdf/certification/EN-Certification%20Preparation%20Packet.pdf), 2024：观察、感受、需要、请求等实践能力与自我反思要求。
-- Center for Nonviolent Communication, [Certification Preparation Packet](https://www.cnvc.org/images/pdf/certification/CPP-Version-Nov-2016-A4-format-English.pdf), 2016：观察与评价、感受与想法、需要与策略、请求与要求等关键区分。

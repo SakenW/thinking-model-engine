@@ -1,4 +1,7 @@
 # FMEA 失效模式与影响分析 (Failure Mode and Effects Analysis)
+
+> **证据层级：A（标准）。** FMEA/FMECA 的规划、执行、记录和维护有国际标准与行业手册支持；具体评分、行动优先级和风险接受标准仍应采用适用行业或组织规则。
+
 ## 概述
 
 FMEA 是一种前置风险分析方法：先明确系统、设计或流程应完成的功能，再系统识别“可能怎样失效、会造成什么影响、为什么会发生、现有控制能否预防或发现”，据此安排改进并跟踪残余风险。
@@ -93,6 +96,6 @@ FMEA 是一种前置风险分析方法：先明确系统、设计或流程应完
 
 ## 依据与参考
 
-- IEC, *IEC 60812:2018 — Failure modes and effects analysis (FMEA and FMECA)*：FMEA/FMECA 的通用方法标准。
-- AIAG & VDA, *FMEA Handbook*, 1st Edition, 2019：汽车行业设计与过程 FMEA 的系统化实践，并引入行动优先级方法。
+- IEC, [*IEC 60812:2018 — Failure modes and effects analysis (FMEA and FMECA)*](https://webstore.iec.ch/en/publication/26359)：FMEA/FMECA 的通用方法标准。ISBN 978-2-8322-5915-3。
+- AIAG & VDA, [*FMEA Handbook*, 1st Edition](https://www.aiag.org/training-and-resources/manuals/details/FMEAAV-1), 2019：汽车行业设计与过程 FMEA 的系统化实践，并引入行动优先级方法。
 - ASQ, [What is FMEA? Failure Mode & Effects Analysis](https://asq.org/quality-resources/fmea)：FMEA 的定义、基本流程、严重度/发生度/探测度与局限概览。

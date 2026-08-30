@@ -1,4 +1,7 @@
 # Jobs to Be Done (JTBD)
+
+> **证据层级：B（实践框架）。** JTBD 的概念和研究流程可追溯到原作者与权威机构，但主要作为产品发现和选择行为研究框架使用，不应写成可普遍预测创新成功的因果规律。
+
 ## 概述
 
 Jobs to Be Done 是理解选择行为的一种视角：人在特定情境下希望取得某种进展，于是“雇用”产品、服务或替代方案来完成这项工作。它关注的不是人口标签或功能清单本身，而是促成选择的情境、期望进展以及功能、情感和社会层面的动因。
@@ -110,4 +113,4 @@ Jobs to Be Done 是理解选择行为的一种视角：人在特定情境下希�
 
 - Clayton Christensen Institute, [Jobs to Be Done Theory](https://www.christenseninstitute.org/theory/jobs-to-be-done/)：将 JTBD 定义为理解人在特定情境下为何做出选择、希望取得何种进展的理论视角。
 - Clayton M. Christensen, Taddy Hall, Karen Dillon & David S. Duncan, [Know Your Customers' “Jobs to Be Done”](https://hbr.org/2016/09/know-your-customers-jobs-to-be-done), *Harvard Business Review*, 2016。
-- Clayton M. Christensen et al., *Competing Against Luck: The Story of Innovation and Customer Choice*, HarperBusiness, 2016。
+- Clayton M. Christensen et al., *Competing Against Luck: The Story of Innovation and Customer Choice*, HarperBusiness, 2016。ISBN 9780062435613。

@@ -418,6 +418,102 @@ validate_stale_counts() {
   fi
 }
 
+validate_eval_manifest() {
+  local manifest="$SKILL_ROOT/evals/evals.json" result
+
+  if [ ! -f "$manifest" ]; then
+    fail 'eval manifest is missing'
+    return
+  fi
+
+  if ! result="$(python3 - "$manifest" <<'PY'
+import json
+import sys
+
+path = sys.argv[1]
+required_coverage = {
+    "delegation_decision",
+    "parallelism",
+    "principal_agent",
+    "evidence_debt",
+}
+
+try:
+    with open(path, encoding="utf-8") as handle:
+        manifest = json.load(handle)
+except (OSError, json.JSONDecodeError) as exc:
+    print(f"cannot parse {path}: {exc}")
+    raise SystemExit(1)
+
+errors = []
+if not isinstance(manifest, dict):
+    errors.append("root must be an object")
+elif manifest.get("skill_name") != "thinking-model-engine":
+    errors.append("skill_name must be thinking-model-engine")
+
+evals = manifest.get("evals") if isinstance(manifest, dict) else None
+if not isinstance(evals, list) or not evals:
+    errors.append("evals must be a non-empty array")
+    evals = []
+
+ids = set()
+coverage = set()
+for index, evaluation in enumerate(evals, start=1):
+    prefix = f"eval #{index}"
+    if not isinstance(evaluation, dict):
+        errors.append(f"{prefix} must be an object")
+        continue
+
+    identifier = evaluation.get("id")
+    if isinstance(identifier, bool) or not isinstance(identifier, int):
+        errors.append(f"{prefix}.id must be an integer")
+    elif identifier in ids:
+        errors.append(f"duplicate eval id: {identifier}")
+    else:
+        ids.add(identifier)
+
+    for field in ("prompt", "expected_output"):
+        value = evaluation.get(field)
+        if not isinstance(value, str) or not value.strip():
+            errors.append(f"{prefix}.{field} must be a non-empty string")
+
+    files = evaluation.get("files")
+    if not isinstance(files, list):
+        errors.append(f"{prefix}.files must be an array (zero fixtures is allowed)")
+    elif any(not isinstance(value, str) or not value.strip() for value in files):
+        errors.append(f"{prefix}.files entries must be non-empty strings")
+
+    expectations = evaluation.get("expectations")
+    if not isinstance(expectations, list) or len(expectations) < 3:
+        errors.append(f"{prefix}.expectations must be an array with at least 3 entries")
+    elif any(not isinstance(value, str) or not value.strip() for value in expectations):
+        errors.append(f"{prefix}.expectations entries must be non-empty strings")
+
+    tags = evaluation.get("coverage")
+    if not isinstance(tags, list) or not tags:
+        errors.append(f"{prefix}.coverage must be a non-empty array")
+    elif any(not isinstance(value, str) or not value.strip() for value in tags):
+        errors.append(f"{prefix}.coverage entries must be non-empty strings")
+    else:
+        coverage.update(tags)
+
+missing_coverage = sorted(required_coverage - coverage)
+if missing_coverage:
+    errors.append("missing required coverage: " + ", ".join(missing_coverage))
+
+if errors:
+    print("; ".join(errors))
+    raise SystemExit(1)
+
+print(f"{len(evals)} evals; required governance coverage declared")
+PY
+)"; then
+    fail "eval manifest structure: ${result:-validation failed}"
+  else
+    pass "eval manifest structure: $result"
+  fi
+}
+
 validate_frontmatter
 validate_skill_length
 validate_model_catalog
@@ -427,6 +523,7 @@ validate_all_wiki_links
 validate_markdown_structure
 validate_retired_names
 validate_stale_counts
+validate_eval_manifest
 
 if [ "$FAILURES" -eq 0 ]; then
   printf 'PASS validation complete\n'
