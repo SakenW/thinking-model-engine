@@ -5,7 +5,9 @@ set -u
 
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 SKILL_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
-EXPECTED_MODEL_COUNT=138
+EXPECTED_MODEL_COUNT=140
+LEGACY_EXEMPTION_COUNT=138
+LEGACY_EXEMPTION_SHA256='ab998a05851e0e80c0edde2ba56f5bae8c64a7069e10e631e17a2e7091e8807a'
 FAILURES=0
 
 pass() {
@@ -121,6 +123,201 @@ validate_model_catalog() {
   fi
 }
 
+has_source_section() {
+  grep -Eq '^## (依据与参考|参考书目)([[:space:]]|$)' "$1"
+}
+
+has_any_evidence_level() {
+  grep -Eq '^>[[:space:]]+\*\*证据层级：[^*]+\*\*' "$1"
+}
+
+has_eligible_evidence_level_content() {
+  local content="$1" declarations label
+
+  declarations="$(printf '%s\n' "$content" | grep -E '^>[[:space:]]+\*\*证据层级：[^*]+\*\*' || true)"
+  if [ "$(printf '%s\n' "$declarations" | sed '/^$/d' | wc -l | tr -d ' ')" -ne 1 ]; then
+    return 1
+  fi
+  if printf '%s\n' "$declarations" | grep -q '来源待核验'; then
+    return 1
+  fi
+
+  label="$(printf '%s\n' "$declarations" | sed -n 's/^>[[:space:]]*\*\*证据层级：\([^*]*\)\*\*.*/\1/p')"
+  case "$label" in
+    A|A（*|A\ \(*|A，*|A,*|A：*|A:*) return 0 ;;
+    B|B（*|B\ \(*|B，*|B,*|B：*|B:*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+has_verifiable_source_content() {
+  printf '%s\n' "$1" | awk '
+    BEGIN { in_sources = 0; found = 0 }
+    /^## (依据与参考|参考书目)([[:space:]]|$)/ { in_sources = 1; next }
+    in_sources && /^##[[:space:]]/ { in_sources = 0 }
+    in_sources {
+      lower = tolower($0)
+      if (lower ~ /https?:\/\/[^[:space:])>]+/ ||
+          lower ~ /10\.[0-9][0-9][0-9][0-9][0-9]*\/[^[:space:]]+/ ||
+          $0 ~ /ISBN[-:[:space:]]+[0-9Xx][0-9Xx -]*[0-9Xx]/) found = 1
+    }
+    END { exit(found ? 0 : 1) }
+  '
+}
+
+is_fully_governed_content() {
+  has_eligible_evidence_level_content "$1" && has_verifiable_source_content "$1"
+}
+
+is_fully_governed() {
+  local content
+  content="$(cat "$1")"
+  is_fully_governed_content "$content"
+}
+
+sha256_text() {
+  if command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 | awk '{ print $1 }'
+  else
+    sha256sum | awk '{ print $1 }'
+  fi
+}
+
+validate_evidence_policy_self_tests() {
+  local valid no_level c_level source_pending empty_sources swapped_entries swapped_hash
+
+  valid=$'# Fixture\n\n> **证据层级：A（理论）。** 可核验。\n\n## 依据与参考\n\n- [Source](https://example.com/paper)'
+  no_level=$'# Fixture\n\n## 依据与参考\n\n- [Source](https://example.com/paper)'
+  c_level=$'# Fixture\n\n> **证据层级：C，来源待核验。** 仅作启发。\n\n## 依据与参考\n\n- [Source](https://example.com/paper)'
+  source_pending=$'# Fixture\n\n> **证据层级：A（理论，来源待核验）。** 尚未核验。\n\n## 依据与参考\n\n- [Source](https://example.com/paper)'
+  empty_sources=$'# Fixture\n\n> **证据层级：A（理论）。** 可核验。\n\n## 依据与参考\n\n## 下一节\n\n无来源。'
+
+  if ! is_fully_governed_content "$valid"; then
+    fail 'evidence policy self-test rejected a valid A-level sourced model'
+  elif is_fully_governed_content "$no_level"; then
+    fail 'evidence policy self-test accepted a model without evidence level'
+  elif is_fully_governed_content "$c_level"; then
+    fail 'evidence policy self-test accepted C-level evidence'
+  elif is_fully_governed_content "$source_pending"; then
+    fail 'evidence policy self-test accepted source-pending evidence'
+  elif is_fully_governed_content "$empty_sources"; then
+    fail 'evidence policy self-test accepted an empty source section'
+  else
+    pass 'evidence policy rejects missing level, C-level, source-pending, and empty sources'
+  fi
+
+  swapped_entries="$(sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' "$SKILL_ROOT/references/legacy-evidence-debt.txt" | sed '1s/10-10-10/11-10-10/')"
+  swapped_hash="$(printf '%s\n' "$swapped_entries" | sha256_text)"
+  if [ "$swapped_hash" = "$LEGACY_EXEMPTION_SHA256" ]; then
+    fail 'frozen legacy exemption self-test did not detect an identity swap'
+  else
+    pass 'frozen legacy exemption fingerprint rejects identity swaps'
+  fi
+}
+
+validate_evidence_governance() {
+  local baseline="$SKILL_ROOT/references/legacy-evidence-debt.txt"
+  local baseline_entries baseline_sorted baseline_hash actual_debt model_file base
+  local duplicate_entries unsorted_entries unexempted_debt
+  local model_count debt_count fully_governed source_only classified_only neither incomplete_both
+  local baseline_count has_source_section_marker has_level_marker paid_down
+
+  if [ ! -f "$baseline" ]; then
+    fail 'frozen legacy evidence exemption list is missing'
+    return
+  fi
+
+  baseline_entries="$(sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' "$baseline")"
+  baseline_sorted="$(printf '%s\n' "$baseline_entries" | LC_ALL=C sort)"
+  duplicate_entries="$(printf '%s\n' "$baseline_entries" | LC_ALL=C sort | uniq -d)"
+  unsorted_entries=''
+
+  if [ "$baseline_entries" != "$baseline_sorted" ]; then
+    unsorted_entries='yes'
+  fi
+
+  if [ -n "$duplicate_entries" ]; then
+    fail "frozen legacy exemption list has duplicates: $(printf '%s' "$duplicate_entries" | paste -sd ', ' -)"
+  elif [ -n "$unsorted_entries" ]; then
+    fail 'frozen legacy exemption list must be sorted by basename'
+  else
+    pass 'frozen legacy exemption list is sorted and unique'
+  fi
+
+  baseline_count="$(printf '%s\n' "$baseline_entries" | wc -l | tr -d ' ')"
+  baseline_hash="$(printf '%s\n' "$baseline_entries" | sha256_text)"
+  if [ "$baseline_count" -ne "$LEGACY_EXEMPTION_COUNT" ]; then
+    fail "frozen legacy exemption count is $baseline_count; expected $LEGACY_EXEMPTION_COUNT"
+  elif [ "$baseline_hash" != "$LEGACY_EXEMPTION_SHA256" ]; then
+    fail "frozen legacy exemption fingerprint changed: $baseline_hash"
+  else
+    pass "frozen legacy exemption identity: count=$baseline_count sha256=$baseline_hash"
+  fi
+
+  while IFS= read -r base; do
+    [ -n "$base" ] || continue
+    case "$base" in
+      '思维模型 - '*) ;;
+      *)
+        fail "frozen legacy exemption list has invalid basename: $base"
+        ;;
+    esac
+  done <<< "$baseline_entries"
+
+  actual_debt=''
+  while IFS= read -r model_file; do
+    if ! is_fully_governed "$model_file"; then
+      base="$(basename "$model_file" .md)"
+      actual_debt="${actual_debt}${actual_debt:+$'\n'}$base"
+    fi
+  done < <(find "$SKILL_ROOT/models" -maxdepth 1 -type f -name '思维模型 - *.md' | LC_ALL=C sort)
+
+  unexempted_debt="$(comm -13 <(printf '%s\n' "$baseline_sorted") <(printf '%s\n' "$actual_debt" | LC_ALL=C sort))"
+
+  if [ -n "$unexempted_debt" ]; then
+    fail "evidence debt is outside the frozen legacy exemption list: $(printf '%s' "$unexempted_debt" | paste -sd ', ' -)"
+  else
+    pass 'actual evidence debt is a subset of the frozen legacy exemption identities'
+  fi
+
+  model_count=0
+  debt_count=0
+  fully_governed=0
+  source_only=0
+  classified_only=0
+  neither=0
+  incomplete_both=0
+  while IFS= read -r model_file; do
+    model_count=$((model_count + 1))
+    if is_fully_governed "$model_file"; then
+      fully_governed=$((fully_governed + 1))
+      continue
+    fi
+
+    debt_count=$((debt_count + 1))
+    has_source_section_marker=0
+    has_level_marker=0
+    has_source_section "$model_file" && has_source_section_marker=1
+    has_any_evidence_level "$model_file" && has_level_marker=1
+    if [ "$has_source_section_marker" -eq 1 ] && [ "$has_level_marker" -eq 1 ]; then
+      incomplete_both=$((incomplete_both + 1))
+    elif [ "$has_source_section_marker" -eq 1 ]; then
+      source_only=$((source_only + 1))
+    elif [ "$has_level_marker" -eq 1 ]; then
+      classified_only=$((classified_only + 1))
+    else
+      neither=$((neither + 1))
+    fi
+  done < <(find "$SKILL_ROOT/models" -maxdepth 1 -type f -name '思维模型 - *.md' | LC_ALL=C sort)
+  paid_down=$((LEGACY_EXEMPTION_COUNT - debt_count))
+
+  if [ "$model_count" -ne "$EXPECTED_MODEL_COUNT" ]; then
+    fail "evidence governance scanned $model_count models; expected $EXPECTED_MODEL_COUNT"
+  else
+    pass "evidence governance: fully_governed=$fully_governed legacy_debt=$debt_count paid_down=$paid_down (source_only=$source_only classified_only=$classified_only neither=$neither incomplete_both=$incomplete_both)"
+  fi
+}
+
 wiki_target_exists() {
   local source_file="$1" target="$2" candidate source_dir basename_candidate
 
@@ -224,6 +421,8 @@ validate_stale_counts() {
 validate_frontmatter
 validate_skill_length
 validate_model_catalog
+validate_evidence_policy_self_tests
+validate_evidence_governance
 validate_all_wiki_links
 validate_markdown_structure
 validate_retired_names
