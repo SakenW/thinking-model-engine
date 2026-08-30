@@ -36,9 +36,13 @@ ThinkingModelEngine/
 ├── README.md                        # 项目说明
 ├── LICENSE                          # MIT License
 ├── evals/
-│   └── evals.json                    # 回归评测用例
+│   └── evals.json                    # 行为评测用例与声明覆盖标签
+├── .github/workflows/
+│   └── validate.yml                   # push / PR 的可移植确定性门禁
 ├── scripts/
-│   └── validate_skill.sh             # 结构、链接和覆盖验收
+│   ├── validate_skill.sh             # 结构、链接和覆盖验收
+│   ├── validate_skill_metadata.py    # 可移植的 SKILL 元数据校验
+│   └── test_validate_skill_metadata.py # 元数据校验器负向回归
 ├── references/
 │   ├── combo-patterns.md              # 分阶段最小组合
 │   └── legacy-evidence-debt.txt       # 138 个旧模型的冻结豁免身份清单
@@ -108,6 +112,9 @@ Skill 会优先区分：
 - Markdown 一级标题和代码围栏是否完整。
 - 冻结豁免身份的数量与 SHA-256 是否未变，实际债务是否仅为其子集，并如实拆分治理状态。
 - 旧命名和过期模型数量是否回流。
+- 评测 JSON 的结构、唯一编号、最小断言数量，以及委派决策、并行、委托—代理和历史证据债务场景是否都有声明覆盖。
+
+GitHub Actions 会在 push 和 pull request 时运行 Bash 语法、JSON 解析、技能元数据快速校验和上述验证器。它只守住确定性结构底线：`evals.json` 的用例仍需要在具备实际模型运行环境时执行和人工判读，CI 不证明模型内容质量、真实委派行为或端到端结果。
 
 ## 维护原则
 
